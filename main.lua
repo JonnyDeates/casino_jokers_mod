@@ -14,318 +14,212 @@ SMODS.Atlas{
     px = 71, --width of one card
     py = 95 -- height of one card
 }
-SMODS.Joker{
-    key = 'roulette-wheel-green', --joker key
-    loc_txt = { -- local text
-        name = 'Roulette Bet On Green',
-        text = {
-            '{C:green}#4# in #1#{} chance',
-            'to {X:mult,C:white}X#3#{} Mult.',
-            'Costs {C:red}-$#2#{} ',
-            'to play.'
-        }
+-- Create a helper function that builds a roulette joker card
+local function createRouletteCard(params)
+    -- Base template with common properties and functions
+    local base = {
+        atlas = 'RouletteWheel',
+        rarity = 1,
+        cost = 3,
+        unlocked = true,
+        discovered = true,
+        blueprint_compat = true,
+        eternal_compat = true,
+        perishable_compat = true,
+        pos = {x = 0, y = 0},
+        loc_txt = {
+            text = {
+                '{C:green}#4# in #1#{} chance',
+                'to {X:mult,C:white}X#3#{} Mult.',
+            }
         },
-        --[[unlock = {
-            'Be {C:legendary}cool{}',
-        }]]
-    atlas = 'RouletteWheel', --atlas' key
-    rarity = 1, --rarity: 1 = Common, 2 = Uncommon, 3 = Rare, 4 = Legendary
-    --soul_pos = { x = 0, y = 0 },
-    cost = 2, --cost
-    unlocked = true, --where it is unlocked or not: if true,
-    discovered = true, --whether or not it starts discovered
-    blueprint_compat = true, --can it be blueprinted/brainstormed/other
-    eternal_compat = true, --can it be eternal
-    perishable_compat = true, --can it be perishable
-    pos = {x = 0, y = 0}, --position in atlas, starts at 0, scales by the atlas' card size (px and py): {x = 1, y = 0} would mean the sprite is 71 pixels to the right
-    config = {
-        extra = {
-            odds = 38,
-            dollar_cost = 1,
-            Xmult= 36,
-        }
-    },
-    loc_vars = function(self,info_queue,center)
-        -- info_queue[#info_queue+1] = G.P_CENTERS.j_joker --adds "Joker"'s description next to this card's description
-        return {vars = {
-            center.ability.extra.odds, --#1# is replaced with card.ability.extra.odds
-            center.ability.extra.dollar_cost, --#2# is replaced with card.ability.extra.chips
-            center.ability.extra.Xmult, --#3# is replaced with card.ability.extra.xMulti
-            "" .. (G.GAME and G.GAME.probabilities.normal or 1) --#4# is replaced with the current players probabilities
-        }}
-    end,
-    check_for_unlock = function(self, args)
-        if args.type == 'derek_loves_you' then --not a real type, just a joke
-            unlock_card(self)
-        end
-        unlock_card(self) --unlocks the card if it isnt unlocked
-    end,
-    calculate = function(self,card,context)
-        if context.joker_main then
-            if math.random() < (G.GAME.probabilities.normal / card.ability.extra.odds) then
-                return {
-                    card = card,
-                    dollars = (card.ability.extra.dollar_cost * -1),
-                    Xmult_mod = card.ability.extra.Xmult,
-                    message = 'X' .. card.ability.extra.Xmult,
-                    colour = G.C.MULT
+        loc_vars = function(self, info_queue, center)
+            return {
+                vars = {
+                    center.ability.extra.odds,         -- #1#: odds
+                    center.ability.extra.wins,         -- #1#: odds
+                    center.ability.extra.Xmult,          -- #3#: multiplier
+                    "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.wins or 1)  -- #4#: player's probability
                 }
-            else
-                return {
-                    card = card,
-                    dollars = (card.ability.extra.dollar_cost * -1),
-                    colour = G.C.RED
-                }
+            }
+        end,
+        calculate = function(self, card, context)
+            if context.joker_main then
+                local normalProb = G.GAME.probabilities.normal * card.ability.extra.wins
+                local odds = card.ability.extra.odds
+                if math.random() < (normalProb / odds) then
+                    return {
+                        card = card,
+                        Xmult_mod = card.ability.extra.Xmult,
+                        message = 'X' .. card.ability.extra.Xmult,
+                        colour = G.C.MULT
+                    }
+                end
             end
-        end
-    end,
-    in_pool = function(self,wawa,wawa2)
-        --whether or not this card is in the pool, return true if it is, return false if its not
-        return true
-    end,
-    --calc_dollar_bonus = function(self,card)
-       -- return 123
---    end,
-}
+        end,
+        in_pool = function(self, _, _)
+            return true
+        end,
+    }
 
-SMODS.Joker{
-    key = 'roulette-wheel-even', --joker key
-    loc_txt = { -- local text
-        name = 'Roulette Bet Even',
-        text = {
-            '{C:green}#4# in #1#{} chance',
-            'to {X:mult,C:white}X#3#{} Mult.',
-            'Costs {C:red}-$#2#{} ',
-            'to play.'
-        }
-    },
-    --[[unlock = {
-        'Be {C:legendary}cool{}',
-    }]]
-    atlas = 'RouletteWheel', --atlas' key
-    rarity = 1, --rarity: 1 = Common, 2 = Uncommon, 3 = Rare, 4 = Legendary
-    --soul_pos = { x = 0, y = 0 },
-    cost = 2, --cost
-    unlocked = true, --where it is unlocked or not: if true,
-    discovered = true, --whether or not it starts discovered
-    blueprint_compat = true, --can it be blueprinted/brainstormed/other
-    eternal_compat = true, --can it be eternal
-    perishable_compat = true, --can it be perishable
-    pos = {x = 0, y = 0}, --position in atlas, starts at 0, scales by the atlas' card size (px and py): {x = 1, y = 0} would mean the sprite is 71 pixels to the right
-    config = {
-        extra = {
-            odds = 2,
-            dollar_cost = 1,
-            Xmult= 2,
-        }
-    },
-    loc_vars = function(self,info_queue,center)
-        -- info_queue[#info_queue+1] = G.P_CENTERS.j_joker --adds "Joker"'s description next to this card's description
-        return {vars = {
-            center.ability.extra.odds, --#1# is replaced with card.ability.extra.odds
-            center.ability.extra.dollar_cost, --#2# is replaced with card.ability.extra.chips
-            center.ability.extra.Xmult, --#3# is replaced with card.ability.extra.xMulti
-            "" .. (G.GAME and G.GAME.probabilities.normal or 1) --#4# is replaced with the current players probabilities
-        }}
-    end,
-    check_for_unlock = function(self, args)
-        if args.type == 'derek_loves_you' then --not a real type, just a joke
-            unlock_card(self)
-        end
-        unlock_card(self) --unlocks the card if it isnt unlocked
-    end,
-    calculate = function(self,card,context)
-        if context.joker_main then
-            if math.random() < (G.GAME.probabilities.normal / card.ability.extra.odds) then
-                return {
-                    card = card,
-                    dollars = (card.ability.extra.dollar_cost * -1),
-                    Xmult_mod = card.ability.extra.Xmult,
-                    message = 'X' .. card.ability.extra.Xmult,
-                    colour = G.C.MULT
-                }
-            else
-                return {
-                    card = card,
-                    dollars = (card.ability.extra.dollar_cost * -1),
-                    colour = G.C.RED
-                }
-            end
-        end
-    end,
-    in_pool = function(self,wawa,wawa2)
-        --whether or not this card is in the pool, return true if it is, return false if its not
-        return true
-    end,
-    --calc_dollar_bonus = function(self,card)
-    -- return 123
-    --    end,
-}
+    -- Merge the custom parameters into the base table
+    for k, v in pairs(params) do
+        base[k] = v
+    end
 
-SMODS.Joker{
-    key = 'roulette-wheel-column', --joker key
-    loc_txt = { -- local text
-        name = 'Roulette Bet Column',
-        text = {
-            '{C:green}#4# in #1#{} chance',
-            'to {X:mult,C:white}X#3#{} Mult.',
-            'Costs {C:red}-$#2#{} ',
-            'to play.'
-        }
-    },
-    --[[unlock = {
-        'Be {C:legendary}cool{}',
-    }]]
-    atlas = 'RouletteWheel', --atlas' key
-    rarity = 1, --rarity: 1 = Common, 2 = Uncommon, 3 = Rare, 4 = Legendary
-    --soul_pos = { x = 0, y = 0 },
-    cost = 2, --cost
-    unlocked = true, --where it is unlocked or not: if true,
-    discovered = true, --whether or not it starts discovered
-    blueprint_compat = true, --can it be blueprinted/brainstormed/other
-    eternal_compat = true, --can it be eternal
-    perishable_compat = true, --can it be perishable
-    pos = {x = 0, y = 0}, --position in atlas, starts at 0, scales by the atlas' card size (px and py): {x = 1, y = 0} would mean the sprite is 71 pixels to the right
-    config = {
-        extra = {
-            odds = 3,
-            dollar_cost = 1,
-            Xmult= 3,
-        }
-    },
-    loc_vars = function(self,info_queue,center)
-        -- info_queue[#info_queue+1] = G.P_CENTERS.j_joker --adds "Joker"'s description next to this card's description
-        return {vars = {
-            center.ability.extra.odds, --#1# is replaced with card.ability.extra.odds
-            center.ability.extra.dollar_cost, --#2# is replaced with card.ability.extra.chips
-            center.ability.extra.Xmult, --#3# is replaced with card.ability.extra.xMulti
-            "" .. (G.GAME and G.GAME.probabilities.normal or 1) --#4# is replaced with the current players probabilities
-        }}
-    end,
-    check_for_unlock = function(self, args)
-        if args.type == 'derek_loves_you' then --not a real type, just a joke
-            unlock_card(self)
-        end
-        unlock_card(self) --unlocks the card if it isnt unlocked
-    end,
-    calculate = function(self,card,context)
-        if context.joker_main then
-            if math.random() < (G.GAME.probabilities.normal / card.ability.extra.odds) then
-                return {
-                    card = card,
-                    dollars = (card.ability.extra.dollar_cost * -1),
-                    Xmult_mod = card.ability.extra.Xmult,
-                    message = 'X' .. card.ability.extra.Xmult,
-                    colour = G.C.MULT
-                }
-            else
-                return {
-                    card = card,
-                    dollars = (card.ability.extra.dollar_cost * -1),
-                    colour = G.C.RED
-                }
-            end
-        end
-    end,
-    in_pool = function(self,wawa,wawa2)
-        --whether or not this card is in the pool, return true if it is, return false if its not
-        return true
-    end,
-    --calc_dollar_bonus = function(self,card)
-    -- return 123
-    --    end,
-}
+    -- Register the joker card using the SMODS system
+    SMODS.Joker(base)
+end
 
-SMODS.Joker{
-    key = 'roulette-wheel-corner', --joker key
-    loc_txt = { -- local text
-        name = 'Roulette Bet Corner',
-        text = {
-            '{C:green}#4# in #1#{} chance',
-            'to {X:mult,C:white}X#3#{} Mult.',
-            'Costs {C:red}-$#2#{} ',
-            'to play.'
-        }
-    },
-    --[[unlock = {
-        'Be {C:legendary}cool{}',
-    }]]
-    atlas = 'RouletteWheel', --atlas' key
-    rarity = 1, --rarity: 1 = Common, 2 = Uncommon, 3 = Rare, 4 = Legendary
-    --soul_pos = { x = 0, y = 0 },
-    cost = 2, --cost
-    unlocked = true, --where it is unlocked or not: if true,
-    discovered = true, --whether or not it starts discovered
-    blueprint_compat = true, --can it be blueprinted/brainstormed/other
-    eternal_compat = true, --can it be eternal
-    perishable_compat = true, --can it be perishable
-    pos = {x = 0, y = 0}, --position in atlas, starts at 0, scales by the atlas' card size (px and py): {x = 1, y = 0} would mean the sprite is 71 pixels to the right
-    config = {
-        extra = {
-            odds = 10,
-            dollar_cost = 1,
-            Xmult= 9,
-        }
-    },
-    loc_vars = function(self,info_queue,center)
-        -- info_queue[#info_queue+1] = G.P_CENTERS.j_joker --adds "Joker"'s description next to this card's description
-        return {vars = {
-            center.ability.extra.odds, --#1# is replaced with card.ability.extra.odds
-            center.ability.extra.dollar_cost, --#2# is replaced with card.ability.extra.chips
-            center.ability.extra.Xmult, --#3# is replaced with card.ability.extra.xMulti
-            "" .. (G.GAME and G.GAME.probabilities.normal or 1) --#4# is replaced with the current players probabilities
-        }}
-    end,
-    check_for_unlock = function(self, args)
-        if args.type == 'derek_loves_you' then --not a real type, just a joke
-            unlock_card(self)
-        end
-        unlock_card(self) --unlocks the card if it isnt unlocked
-    end,
-    calculate = function(self,card,context)
-        if context.joker_main then
-            if math.random() < (G.GAME.probabilities.normal / card.ability.extra.odds) then
-                return {
-                    card = card,
-                    dollars = (card.ability.extra.dollar_cost * -1),
-                    Xmult_mod = card.ability.extra.Xmult,
-                    message = 'X' .. card.ability.extra.Xmult,
-                    colour = G.C.MULT
-                }
-            else
-                return {
-                    card = card,
-                    dollars = (card.ability.extra.dollar_cost * -1),
-                    colour = G.C.RED
-                }
-            end
-        end
-    end,
-    in_pool = function(self,wawa,wawa2)
-        --whether or not this card is in the pool, return true if it is, return false if its not
-        return true
-    end,
-    --calc_dollar_bonus = function(self,card)
-    -- return 123
-    --    end,
-}
+-- Now define each roulette card using the helper
 
-SMODS.ConsumableType{
-    key = 'DerekConsumableType', --consumable type key
-
-    collection_rows = {4,5}, --amount of cards in one page
-    primary_colour = G.C.PURPLE, --first color
-    secondary_colour = G.C.DARK_EDITION, --second color
+createRouletteCard{
+    key = 'roulette-wheel-green',
     loc_txt = {
-        collection = 'Derek Cards', --name displayed in collection
-        name = 'Derek', --name displayed in badge
-        undiscovered = {
-            name = 'Hidden Derek', --undiscovered name
-            text = {'Derek is', 'not here'} --undiscovered text
+        name = 'Single',
+        text = {
+            '{C:green}#4# in #1#{} chance',
+            'to {X:mult,C:white}X#3#{} Mult.',
         }
     },
-    shop_rate = 1, --rate in shop out of 100
+    config = {
+        extra = {
+            odds = 37,
+            wins = 1,
+            Xmult = 36,
+        }
+    },
+    pos = {x = 1, y = 0},
 }
+
+createRouletteCard{
+    key = 'roulette-wheel-split',
+    loc_txt = {
+        name = 'Split',
+        text = {
+            '{C:green}#4# in #1#{} chance',
+            'to {X:mult,C:white}X#3#{} Mult.',
+        }
+    },
+    config = {
+        extra = {
+            odds = 37,
+            wins = 2,
+            Xmult = 18,
+        }
+    },
+     pos = {x = 2, y = 0},
+
+}
+
+createRouletteCard{
+    key = 'roulette-wheel-street',
+    loc_txt = {
+        name = 'Street',
+        text = {
+            '{C:green}#4# in #1#{} chance',
+            'to {X:mult,C:white}X#3#{} Mult.',
+        }
+    },
+    config = {
+        extra = {
+            odds = 37,
+            Xmult = 12,
+            wins = 3,
+        }
+    },
+    pos = {x = 3, y = 0},
+}
+
+createRouletteCard{
+    key = 'roulette-wheel-corner',
+    loc_txt = {
+        name = 'Corner',
+        text = {
+            '{C:green}#4# in #1#{} chance',
+            'to {X:mult,C:white}X#3#{} Mult.',
+        }
+    },
+    config = {
+        extra = {
+            odds = 37,
+            Xmult = 9,
+            wins = 4,
+        }
+    },
+    pos = {x = 4, y = 0},
+}
+createRouletteCard{
+    key = 'roulette-wheel-dbl-street',
+    loc_txt = {
+        name = 'Double Street',
+        text = {
+            '{C:green}#4# in #1#{} chance',
+            'to {X:mult,C:white}X#3#{} Mult.',
+        }
+    },
+    config = {
+        extra = {
+            odds = 37,
+            Xmult = 6,
+            wins = 6,
+        }
+    },
+    pos = {x = 0, y = 1},
+}
+createRouletteCard{
+    key = 'roulette-wheel-dozen',
+    loc_txt = {
+        name = 'Dozen',
+        text = {
+            '{C:green}#4# in #1#{} chance',
+            'to {X:mult,C:white}X#3#{} Mult.',
+        }
+    },
+    config = {
+        extra = {
+            odds = 37,
+            Xmult = 3,
+            wins = 12,
+        }
+    },
+    pos = {x = 1, y = 1},
+}
+createRouletteCard{
+    key = 'roulette-wheel-red',
+    loc_txt = {
+        name = 'Red',
+        text = {
+            '{C:green}#4# in #1#{} chance',
+            'to {X:mult,C:white}X#3#{} Mult.',
+        }
+    },
+    config = {
+        extra = {
+            odds = 37,
+            Xmult = 2,
+            wins = 18,
+        }
+    },
+    pos = {x = 2, y = 1},
+}
+-- The consumable type can remain as is (or be similarly refactored if more types share common behavior)
+SMODS.ConsumableType{
+    key = 'DerekConsumableType',
+    collection_rows = {4,5},
+    primary_colour = G.C.PURPLE,
+    secondary_colour = G.C.DARK_EDITION,
+    loc_txt = {
+        collection = 'Derek Cards',
+        name = 'Derek',
+        undiscovered = {
+            name = 'Hidden Derek',
+            text = {'Derek is', 'not here'}
+        }
+    },
+    shop_rate = 1,
+}
+
 
 
 SMODS.UndiscoveredSprite{
