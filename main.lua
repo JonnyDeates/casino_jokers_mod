@@ -6,40 +6,68 @@
 --- PREFIX: cjjd
 ----------------------------------------------
 ------------MOD CODE -------------------------
-
-
-SMODS.Atlas{
+function SMODS.INIT.CasinoMods()
+    sendDebugMessage("Loaded CasinoMods")
+end
+SMODS.Atlas {
     key = 'CasinoMods', --atlas key
     path = 'Jokers.png', --atlas' path in (yourMod)/assets/1x or (yourMod)/assets/2x
     px = 71, --width of one card
     py = 95 -- height of one card
 }
--- Create a helper function that builds a roulette joker card
-local function createRouletteCard(name,params)
-    -- Base template with common properties and functions
+
+function shallowCopyInto(original, copyFromBase)
+    for k, v in pairs(copyFromBase) do
+        original[k] = v
+    end
+    return original
+end
+local Rarity = {
+    Common = 1,
+    Uncommon = 2,
+    Rare = 3,
+    Legendary = 4
+}
+local function baseCard(name, column, row, params, cardAttributes)
     local base = {
         atlas = 'CasinoMods',
-        rarity = 1,
+        key = 'roulette-wheel-' .. string.lower(name):gsub(' ', '-'),
+        rarity = Rarity.Common,
         cost = 3,
         unlocked = true,
         discovered = true,
         blueprint_compat = true,
         eternal_compat = true,
         perishable_compat = true,
-        pos = {x = 0, y = 0},
+        pos = { x = column, y = row },
+        in_pool = function(self, _, _)
+            return true
+        end,
+    }
+    -- Merge the custom parameters into the base table
+    shallowCopyInto(base, cardAttributes)
+    shallowCopyInto(base, params)
+
+    SMODS.Joker(base)
+end
+
+-- Create a helper function that builds a roulette joker card
+local function createRouletteCard(name, column, row, params)
+    baseCard(name, column, row, params, {
         loc_txt = {
             name = name,
             text = {
-                '{C:green}#4# in #1#{} chance',
-                'to {X:mult,C:white}X#3#{} Mult.',
+                'Every played high card has a',
+                'chance of {C:green}#4# in #1#{} to double',
+                'its to {X:mult,C:white}X#3#{} Mult.',
             }
         },
         loc_vars = function(self, info_queue, center)
             return {
                 vars = {
-                    center.ability.extra.odds,         -- #1#: odds
-                    center.ability.extra.wins,         -- #1#: odds
-                    center.ability.extra.Xmult,          -- #3#: multiplier
+                    center.ability.extra.odds, -- #1#: odds
+                    center.ability.extra.wins, -- #1#: odds
+                    center.ability.extra.Xmult, -- #3#: multiplier
                     "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.wins or 1)  -- #4#: player's probability
                 }
             }
@@ -57,33 +85,11 @@ local function createRouletteCard(name,params)
                     }
                 end
             end
-        end,
-        in_pool = function(self, _, _)
-            return true
-        end,
-    }
-
-    -- Merge the custom parameters into the base table
-    for k, v in pairs(params) do
-        base[k] = v
-    end
-
-    -- Register the joker card using the SMODS system
-    SMODS.Joker(base)
+        end
+    })
 end
-
-local function createMoneySlotsCard(name, params)
-    -- Base template with common properties and functions
-    local base = {
-        atlas = 'CasinoMods',
-        rarity = 1,
-        cost = 3,
-        unlocked = true,
-        discovered = true,
-        blueprint_compat = true,
-        eternal_compat = true,
-        perishable_compat = true,
-        pos = {x = 0, y = 0},
+local function createMoneySlotsCard(name, column, row, params)
+    baseCard(name, column, row, params, {
         loc_txt = {
             name = name,
             text = {
@@ -98,62 +104,71 @@ local function createMoneySlotsCard(name, params)
         loc_vars = function(self, info_queue, center)
             return {
                 vars = {
-                    center.ability.extra.costs,         -- #1#: costs
-                    center.ability.extra.overall_odds,         -- 2#: overall_odds
-                    center.ability.extra.payout_1,         -- 3#: odds
-                    "" .. (G.GAME and G.GAME.probabilities.normal or 1),  -- #4#: player's probability
-                    center.ability.extra.odds_2,         -- #5#: odds
-                    center.ability.extra.payout_2,         -- #6#: payout
-                    "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.odds_2 or 1),  -- #7#: player's probability
-                    center.ability.extra.odds_3,         -- #8#: odds
-                    center.ability.extra.payout_3,              -- #9#: payout
-                    "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.odds_3 or 1),  -- #10#: player's probability
-                    center.ability.extra.odds_4,         -- #11#: odds
-                    center.ability.extra.payout_4,       -- #12#: payout
-                    "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.odds_4 or 1),  -- #13#: player's probability
+                    center.ability.extra.costs, -- #1#: costs
+                    center.ability.extra.overall_odds, -- 2#: overall_odds
+                    center.ability.extra.payout_1, -- 3#: odds
+                    "" .. (G.GAME and G.GAME.probabilities.normal or 1), -- #4#: player's probability
+                    center.ability.extra.odds_2, -- #5#: odds
+                    center.ability.extra.payout_2, -- #6#: payout
+                    "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.odds_2 or 1), -- #7#: player's probability
+                    center.ability.extra.odds_3, -- #8#: odds
+                    center.ability.extra.payout_3, -- #9#: payout
+                    "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.odds_3 or 1), -- #10#: player's probability
+                    center.ability.extra.odds_4, -- #11#: odds
+                    center.ability.extra.payout_4, -- #12#: payout
+                    "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.odds_4 or 1), -- #13#: player's probability
                 }
             }
         end,
         calculate = function(self, card, context)
-            if context.joker_main then
-                local normalProb = G.GAME.probabilities.normal * card.ability.extra.wins
-                local odds = card.ability.extra.odds
-                if math.random() < (normalProb / odds) then
+            if context.end_of_round then
+                local gameProbability = G.GAME.probabilities.normal
+                local odds = card.ability.extra.overall_odds
+                local random = math.random()
+                local costs = (card.ability.extra.costs * -1)
+                if random < (gameProbability / odds) then
                     return {
                         card = card,
-                        Xmult_mod = card.ability.extra.Xmult,
-                        message = 'X' .. card.ability.extra.Xmult,
-                        colour = G.C.MULT
+                        dollars = costs + card.ability.extra.payout_1,
+                        message = '+' .. card.ability.extra.payout_1,
+                        colour = G.C.Money
+                    }
+                elseif random < ((card.ability.extra.odds_2 * gameProbability) / odds) then
+                    return {
+                        card = card,
+                        dollars = costs + card.ability.extra.payout_2,
+                        message = '+' .. card.ability.extra.payout_2,
+                        colour = G.C.Money
+                    }
+                elseif random < ((card.ability.extra.odds_3 * gameProbability) / odds) then
+                    return {
+                        card = card,
+                        dollars = costs + card.ability.extra.payout_3,
+                        message = '+' .. card.ability.extra.payout_3,
+                        colour = G.C.Money
+                    }
+                elseif random < ((card.ability.extra.odds_4 * gameProbability) / odds) then
+                    return {
+                        card = card,
+                        dollars = costs + card.ability.extra.payout_4,
+                        message = '+' .. card.ability.extra.payout_4,
+                        colour = G.C.Money
+                    }
+                else
+                    return {
+                        card = card,
+                        dollars = costs,
+                        message = '-' .. card.ability.extra.costs,
+                        colour = G.C.Red
                     }
                 end
             end
-        end,
-        in_pool = function(self, _, _)
-            return true
-        end,
-    }
-
-    -- Merge the custom parameters into the base table
-    for k, v in pairs(params) do
-        base[k] = v
-    end
-
-    -- Register the joker card using the SMODS system
-    SMODS.Joker(base)
+        end
+    })
 end
 
-local function createChipSlotsCard(name, params)
-    -- Base template with common properties and functions
-    local base = {
-        atlas = 'CasinoMods',
-        rarity = 1,
-        cost = 3,
-        unlocked = true,
-        discovered = true,
-        blueprint_compat = true,
-        eternal_compat = true,
-        perishable_compat = true,
-        pos = {x = 0, y = 0},
+local function createChipSlotsCard(name, column, row, params)
+    baseCard(name, column, row, params, {
         loc_txt = {
             name = name,
             text = {
@@ -168,60 +183,61 @@ local function createChipSlotsCard(name, params)
         loc_vars = function(self, info_queue, center)
             return {
                 vars = {
-                    center.ability.extra.overall_odds,         -- 2#: overall_odds
-                    center.ability.extra.payout_1,         -- 3#: odds
-                    "" .. (G.GAME and G.GAME.probabilities.normal or 1),  -- #4#: player's probability
-                    center.ability.extra.odds_2,         -- #5#: odds
-                    center.ability.extra.payout_2,         -- #6#: payout
-                    "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.odds_2 or 1),  -- #7#: player's probability
-                    center.ability.extra.odds_3,         -- #8#: odds
-                    center.ability.extra.payout_3,              -- #9#: payout
-                    "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.odds_3 or 1),  -- #10#: player's probability
-                    center.ability.extra.odds_4,         -- #11#: odds
-                    center.ability.extra.payout_4,       -- #12#: payout
-                    "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.odds_4 or 1),  -- #13#: player's probability
+                    center.ability.extra.overall_odds, -- 2#: overall_odds
+                    center.ability.extra.payout_1, -- 3#: odds
+                    "" .. (G.GAME and G.GAME.probabilities.normal or 1), -- #4#: player's probability
+                    center.ability.extra.odds_2, -- #5#: odds
+                    center.ability.extra.payout_2, -- #6#: payout
+                    "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.odds_2 or 1), -- #7#: player's probability
+                    center.ability.extra.odds_3, -- #8#: odds
+                    center.ability.extra.payout_3, -- #9#: payout
+                    "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.odds_3 or 1), -- #10#: player's probability
+                    center.ability.extra.odds_4, -- #11#: odds
+                    center.ability.extra.payout_4, -- #12#: payout
+                    "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.odds_4 or 1), -- #13#: player's probability
                 }
             }
         end,
         calculate = function(self, card, context)
             if context.joker_main then
-                local normalProb = G.GAME.probabilities.normal * card.ability.extra.wins
-                local odds = card.ability.extra.odds
-                if math.random() < (normalProb / odds) then
+                local gameProbability = G.GAME.probabilities.normal
+                local odds = card.ability.extra.overall_odds
+                local random = math.random()
+                if random < (gameProbability / odds) then
                     return {
                         card = card,
-                        Xmult_mod = card.ability.extra.Xmult,
-                        message = 'X' .. card.ability.extra.Xmult,
-                        colour = G.C.MULT
+                        chips_mod = card.ability.extra.payout_1,
+                        message = '+' .. card.ability.extra.payout_1,
+                        colour = G.C.Chip
+                    }
+                elseif random < ((card.ability.extra.odds_2 * gameProbability) / odds) then
+                    return {
+                        card = card,
+                        chips_mod = card.ability.extra.payout_2,
+                        message = '+' .. card.ability.extra.payout_2,
+                        colour = G.C.Chip
+                    }
+                elseif random < ((card.ability.extra.odds_3 * gameProbability) / odds) then
+                    return {
+                        card = card,
+                        chips_mod = card.ability.extra.payout_3,
+                        message = '+' .. card.ability.extra.payout_3,
+                        colour = G.C.Chip
+                    }
+                elseif random < ((card.ability.extra.odds_4 * gameProbability) / odds) then
+                    return {
+                        card = card,
+                        chips_mod = card.ability.extra.payout_4,
+                        message = '+' .. card.ability.extra.payout_4,
+                        colour = G.C.Chip
                     }
                 end
             end
         end,
-        in_pool = function(self, _, _)
-            return true
-        end,
-    }
-
-    -- Merge the custom parameters into the base table
-    for k, v in pairs(params) do
-        base[k] = v
-    end
-
-    -- Register the joker card using the SMODS system
-    SMODS.Joker(base)
+    })
 end
-local function createMultiSlotsCard(name, params)
-    -- Base template with common properties and functions
-    local base = {
-        atlas = 'CasinoMods',
-        rarity = 1,
-        cost = 3,
-        unlocked = true,
-        discovered = true,
-        blueprint_compat = true,
-        eternal_compat = true,
-        perishable_compat = true,
-        pos = {x = 0, y = 0},
+local function createMultiSlotsCard(name, column, row, params)
+    baseCard(name, column, row, params, {
         loc_txt = {
             name = name,
             text = {
@@ -236,76 +252,273 @@ local function createMultiSlotsCard(name, params)
         loc_vars = function(self, info_queue, center)
             return {
                 vars = {
-                    center.ability.extra.overall_odds,         -- 2#: overall_odds
-                    center.ability.extra.payout_1,         -- 3#: odds
-                    "" .. (G.GAME and G.GAME.probabilities.normal or 1),  -- #4#: player's probability
-                    center.ability.extra.odds_2,         -- #5#: odds
-                    center.ability.extra.payout_2,         -- #6#: payout
-                    "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.odds_2 or 1),  -- #7#: player's probability
-                    center.ability.extra.odds_3,         -- #8#: odds
-                    center.ability.extra.payout_3,              -- #9#: payout
-                    "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.odds_3 or 1),  -- #10#: player's probability
-                    center.ability.extra.odds_4,         -- #11#: odds
-                    center.ability.extra.payout_4,       -- #12#: payout
-                    "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.odds_4 or 1),  -- #13#: player's probability
+                    center.ability.extra.overall_odds, -- 2#: overall_odds
+                    center.ability.extra.payout_1, -- 3#: odds
+                    "" .. (G.GAME and G.GAME.probabilities.normal or 1), -- #4#: player's probability
+                    center.ability.extra.odds_2, -- #5#: odds
+                    center.ability.extra.payout_2, -- #6#: payout
+                    "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.odds_2 or 1), -- #7#: player's probability
+                    center.ability.extra.odds_3, -- #8#: odds
+                    center.ability.extra.payout_3, -- #9#: payout
+                    "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.odds_3 or 1), -- #10#: player's probability
+                    center.ability.extra.odds_4, -- #11#: odds
+                    center.ability.extra.payout_4, -- #12#: payout
+                    "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.odds_4 or 1), -- #13#: player's probability
                 }
             }
         end,
         calculate = function(self, card, context)
             if context.joker_main then
-                local normalProb = G.GAME.probabilities.normal * card.ability.extra.wins
-                local odds = card.ability.extra.odds
-                if math.random() < (normalProb / odds) then
+                local gameProbability = G.GAME.probabilities.normal
+                local odds = card.ability.extra.overall_odds
+                local random = math.random()
+                if random < (gameProbability / odds) then
                     return {
                         card = card,
-                        Xmult_mod = card.ability.extra.Xmult,
-                        message = 'X' .. card.ability.extra.Xmult,
+                        mult_mod = card.ability.extra.payout_1,
+                        message = '+' .. card.ability.extra.payout_1,
+                        colour = G.C.MULT
+                    }
+                elseif random < ((card.ability.extra.odds_2 * gameProbability) / odds) then
+                    return {
+                        card = card,
+                        mult_mod = card.ability.extra.payout_2,
+                        message = '+' .. card.ability.extra.payout_2,
+                        colour = G.C.MULT
+                    }
+                elseif random < ((card.ability.extra.odds_3 * gameProbability) / odds) then
+                    return {
+                        card = card,
+                        mult_mod = card.ability.extra.payout_3,
+                        message = '+' .. card.ability.extra.payout_3,
+                        colour = G.C.MULT
+                    }
+                elseif random < ((card.ability.extra.odds_4 * gameProbability) / odds) then
+                    return {
+                        card = card,
+                        mult_mod = card.ability.extra.payout_4,
+                        message = '+' .. card.ability.extra.payout_4,
                         colour = G.C.MULT
                     }
                 end
             end
         end,
-        in_pool = function(self, _, _)
-            return true
-        end,
-    }
-
-    -- Merge the custom parameters into the base table
-    for k, v in pairs(params) do
-        base[k] = v
-    end
-
-    -- Register the joker card using the SMODS system
-    SMODS.Joker(base)
+    })
 end
--- Now define each roulette card using the helper
+local function createMultiTimesSlotsCard(name, column, row, params)
+    baseCard(name, column, row, params, {
+        loc_txt = {
+            name = name,
+            text = {
+                'Every hand there is a chance',
+                'to win on of the following:',
+                '{C:green}#3# in #1#{} chance for {X:mult,C:white}x#2#{}',
+                '{C:green}#6# in #1#{} chance for {X:mult,C:white}x#5#{}',
+                '{C:green}#9# in #1#{} chance for {X:mult,C:white}x#8#{}',
+                '{C:green}#12# in #1#{} chance for {X:mult,C:white}x#11#{}',
+            }
+        },
+        loc_vars = function(self, info_queue, center)
+            return {
+                vars = {
+                    center.ability.extra.overall_odds, -- 2#: overall_odds
+                    center.ability.extra.payout_1, -- 3#: odds
+                    "" .. (G.GAME and G.GAME.probabilities.normal or 1), -- #4#: player's probability
+                    center.ability.extra.odds_2, -- #5#: odds
+                    center.ability.extra.payout_2, -- #6#: payout
+                    "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.odds_2 or 1), -- #7#: player's probability
+                    center.ability.extra.odds_3, -- #8#: odds
+                    center.ability.extra.payout_3, -- #9#: payout
+                    "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.odds_3 or 1), -- #10#: player's probability
+                    center.ability.extra.odds_4, -- #11#: odds
+                    center.ability.extra.payout_4, -- #12#: payout
+                    "" .. (G.GAME and G.GAME.probabilities.normal * center.ability.extra.odds_4 or 1), -- #13#: player's probability
+                }
+            }
+        end,
+        calculate = function(self, card, context)
+            if context.joker_main then
+                local gameProbability = G.GAME.probabilities.normal
+                local odds = card.ability.extra.overall_odds
+                local random = math.random()
+                if random < (gameProbability / odds) then
+                    return {
+                        card = card,
+                        Xmult_mod = card.ability.extra.payout_1,
+                        message = 'x' .. card.ability.extra.payout_1,
+                        colour = G.C.MULT
+                    }
+                elseif random < ((card.ability.extra.odds_2 * gameProbability) / odds) then
+                    return {
+                        card = card,
+                        Xmult_mod = card.ability.extra.payout_2,
+                        message = 'x' .. card.ability.extra.payout_2,
+                        colour = G.C.MULT
+                    }
+                elseif random < ((card.ability.extra.odds_3 * gameProbability) / odds) then
+                    return {
+                        card = card,
+                        Xmult_mod = card.ability.extra.payout_3,
+                        message = 'x' .. card.ability.extra.payout_3,
+                        colour = G.C.MULT
+                    }
+                elseif random < ((card.ability.extra.odds_4 * gameProbability) / odds) then
+                    return {
+                        card = card,
+                        Xmult_mod = card.ability.extra.payout_4,
+                        message = 'x' .. card.ability.extra.payout_4,
+                        colour = G.C.MULT
+                    }
+                end
+            end
+        end,
+    })
+end
+-- Increases Game Probability Multiplier by x3
+baseCard('Oops! All 12s', 0, 0, {}, {
+    rarity = Rarity.Rare,
+    blueprint_compat = false,
+    ability = {
+        name = "Oops! All 12s"
+    },
+    loc_txt = {
+        name = 'Oops! All 12s',
+        text = {
+            'Quadruples all {C:attention}listed{} \n',
+            '{C:green}probabilities{}',
+            '(ex: {C:green}1 in 4{} -> {C:green}4 in 4{})',
+        }
+    },
+})
 
-createRouletteCard('Single',{
-    key = 'roulette-wheel-green',
+local add_to_deckref = Card.add_to_deck
+function Card.add_to_deck(self, from_debuff)
+    if not self.added_to_deck then
+        if self.ability.name == 'j_roulette-wheel-oops!-all-12s' then
+            for k, v in pairs(G.GAME.probabilities) do
+                G.GAME.probabilities[k] = v * 4
+            end
+        end
+    end
+    add_to_deckref(self, from_debuff)
+end
+
+local remove_from_deckref = Card.remove_from_deck
+function Card.remove_from_deck(self, from_debuff)
+    if self.added_to_deck then
+        if self.ability.name == 'j_roulette-wheel-oops!-all-12s' then
+            for k, v in pairs(G.GAME.probabilities) do
+                G.GAME.probabilities[k] = v / 4
+            end
+        end
+    end
+    remove_from_deckref(self, from_debuff)
+end
+
+baseCard('Single', 1, 0, {}, {
+    rarity = Rarity.Rare,
+    ability = {
+        name = "Single! All on 00"
+    },
+    loc_txt = {
+        name = "Single! All on 00",
+        text = {
+            'Every hand played with only',
+            '1 Card has a chance of {C:green}#1#/#2#{} to',
+            'increase current multiplier by {X:mult,C:white}x#3#{}',
+            '(Current Multiplier {X:mult,C:white}x#4#{})',
+        }
+    },
+    loc_vars = function(self, info_queue, center)
+        return {
+            vars = {
+                "" .. (G.GAME and G.GAME.probabilities.normal or 1),
+                center.ability.extra.odds,
+                center.ability.extra.multiplier,
+                center.ability.extra.current_odds_multiplier,
+            }
+        }
+    end,
     config = {
         extra = {
             odds = 37,
-            wins = 1,
-            Xmult = 36,
+            multiplier = 36,
+            current_odds_multiplier = 1
         }
     },
-    pos = {x = 1, y = 0},
+    calculate = function(self, card, context)
+        if context.joker_main then
+            local gameProbability = G.GAME.probabilities.normal
+            local odds = card.ability.extra.odds
+            local random = math.random()
+            if #context.full_hand == 1 and random < (gameProbability / odds) then
+                card.ability.extra.current_odds_multiplier = card.ability.extra.current_odds_multiplier + card.ability.extra.multiplier
+            end
+            return {
+                card = card,
+                Xmult_mod = card.ability.extra.current_odds_multiplier,
+                message = 'x' .. card.ability.extra.current_odds_multiplier,
+                colour = G.C.MULT
+            }
+        end
+    end,
 })
-
-createRouletteCard('Split', {
-    key = 'roulette-wheel-split',
+baseCard('Split', 2, 0, {}, {
+    rarity = Rarity.Common,
+    ability = {
+        name = "Split!"
+    },
+    loc_txt = {
+        name = "Split!",
+        text = {
+            'Every hand played with a pair',
+            'has a chance of {C:green}#1#/#2#{} to',
+            'increase chips by {C:chips}+#3#{}',
+            '(Current Chips {C:chips}+#4#{})',
+        }
+    },
+    loc_vars = function(self, info_queue, center)
+        return {
+            vars = {
+                "" .. (G.GAME and (G.GAME.probabilities.normal * 2 or 1 * 2)),
+                center.ability.extra.odds,
+                center.ability.extra.chips,
+                center.ability.extra.current_chips,
+            }
+        }
+    end,
     config = {
         extra = {
             odds = 37,
-            wins = 2,
-            Xmult = 18,
+            chips = 18,
+            current_chips = 0
         }
     },
-     pos = {x = 2, y = 0},
-})
+    calculate = function(self, card, context)
+        if context.joker_main then
+            local gameProbability = G.GAME.probabilities.normal * 2
+            local odds = card.ability.extra.odds
+            local random = math.random()
+            local text, disp_text, poker_hands, scoring_hand, non_loc_disp_text = G.FUNCS.get_poker_hand_info(G.play.cards)
 
-createRouletteCard('Street',{
-    key = 'roulette-wheel-street',
+            if random < (gameProbability / odds) then
+                local hands = { "Pair", "Three of a Kind", "Two Pair", "Four of a Kind", "Flush Five", "Five of a Kind", "Full House" }
+
+                for _, value in ipairs(hands) do
+                    if non_loc_disp_text == value then
+                        card.ability.extra.current_chips = card.ability.extra.current_chips + card.ability.extra.chips
+                    end
+                end
+            end
+            return {
+                card = card,
+                chips = card.ability.extra.current_chips,
+                colour = G.C.Chips
+            }
+        end
+    end,
+})
+createRouletteCard('Street', 3, 0, {
     config = {
         extra = {
             odds = 37,
@@ -313,11 +526,9 @@ createRouletteCard('Street',{
             wins = 3,
         }
     },
-    pos = {x = 3, y = 0},
 })
 
-createRouletteCard('Corner', {
-    key = 'roulette-wheel-corner',
+createRouletteCard('Corner', 4, 0, {
     config = {
         extra = {
             odds = 37,
@@ -325,10 +536,8 @@ createRouletteCard('Corner', {
             wins = 4,
         }
     },
-    pos = {x = 4, y = 0},
 })
-createRouletteCard('Double Street', {
-    key = 'roulette-wheel-dbl-street',
+createRouletteCard('Double Street', 0, 1, {
     config = {
         extra = {
             odds = 37,
@@ -336,10 +545,8 @@ createRouletteCard('Double Street', {
             wins = 6,
         }
     },
-    pos = {x = 0, y = 1},
 })
-createRouletteCard('Dozen',{
-    key = 'roulette-wheel-dozen',
+createRouletteCard('Dozen', 1, 1, {
     config = {
         extra = {
             odds = 37,
@@ -347,10 +554,8 @@ createRouletteCard('Dozen',{
             wins = 12,
         }
     },
-    pos = {x = 1, y = 1},
 })
-createRouletteCard('Red',{
-    key = 'roulette-wheel-red',
+createRouletteCard('Red', 2, 1, {
     config = {
         extra = {
             odds = 37,
@@ -358,14 +563,13 @@ createRouletteCard('Red',{
             wins = 18,
         }
     },
-    pos = {x = 2, y = 1},
 })
-createMoneySlotsCard('Penny Slots', {
-    key = 'money-slots-penny-slots',
+createMoneySlotsCard('Penny Slots', 3, 1, {
+    cost = 3,
     config = {
         extra = {
             costs = 1,
-            overall_odds = 500,
+            overall_odds = 777,
             payout_1 = 20,
             odds_2 = 10,
             payout_2 = 10,
@@ -375,14 +579,14 @@ createMoneySlotsCard('Penny Slots', {
             payout_4 = 1,
         }
     },
-    pos = {x = 3, y = 1},
+    pos = { x = 3, y = 1 },
 })
-createMoneySlotsCard('Soothing Slots', {
-    key = 'money-slots-soothing-slots',
+createMoneySlotsCard('Soothing Slots', 4, 1, {
+    cost = 5,
     config = {
         extra = {
             costs = 5,
-            overall_odds = 500,
+            overall_odds = 777,
             odds_2 = 10,
             odds_3 = 100,
             odds_4 = 250,
@@ -392,83 +596,75 @@ createMoneySlotsCard('Soothing Slots', {
             payout_4 = 5,
         }
     },
-    pos = {x = 4, y = 1},
 })
-createMoneySlotsCard('High Roller', {
-    key = 'money-slots-high-roller-slots',
+createMoneySlotsCard('High Roller', 0, 2, {
     rarity = 2,
     cost = 6,
     config = {
         extra = {
             costs = 10,
-            overall_odds = 500,
+            overall_odds = 777,
             odds_2 = 10,
             odds_3 = 100,
-            odds_4 = 250,
+            odds_4 = 300,
             payout_1 = 200,
             payout_2 = 100,
             payout_3 = 30,
             payout_4 = 10,
         }
     },
-    pos = {x = 0, y = 2},
 })
-createChipSlotsCard('Chip Seeker', {
-    key = 'chip-slots-chip-sleeker',
-    rarity = 1,
+createChipSlotsCard('Chip Seeker', 1, 2, {
+    cost = 3,
     config = {
         extra = {
-            overall_odds = 500,
+            overall_odds = 777,
             odds_2 = 10,
             odds_3 = 100,
-            odds_4 = 250,
+            odds_4 = 300,
             payout_1 = 150,
             payout_2 = 50,
             payout_3 = 10,
             payout_4 = 5,
         }
     },
-    pos = {x = 1, y = 2},
 })
-createChipSlotsCard('Chip Finder', {
-    key = 'chip-slots-chip-finder',
-    rarity = 1,
+createChipSlotsCard('Chip Finder', 2, 2, {
+    cost = 5,
     config = {
         extra = {
-            overall_odds = 500,
+            overall_odds = 777,
             odds_2 = 10,
             odds_3 = 100,
-            odds_4 = 250,
+            odds_4 = 300,
             payout_1 = 500,
             payout_2 = 250,
             payout_3 = 100,
             payout_4 = 50,
         }
     },
-    pos = {x = 2, y = 2},
 })
-createChipSlotsCard('Chip Collector', {
-    key = 'chip-slots-chip-collector',
-    rarity = 2,
+createChipSlotsCard('Chip Collector', 3, 2, {
+    rarity = Rarity.Uncommon,
+    cost = 7,
     config = {
         extra = {
-            overall_odds = 500,
+            overall_odds = 777,
             odds_2 = 10,
             odds_3 = 100,
-            odds_4 = 250,
+            odds_4 = 300,
             payout_1 = 1500,
             payout_2 = 1000,
             payout_3 = 500,
             payout_4 = 200,
         }
     },
-    pos = {x = 3, y = 2},
 })
-createMultiSlotsCard('Any Multi Plz', {
-    key = 'multi-slots-any-multi-plz',
+createMultiSlotsCard('Any Multi Plz', 1, 3, {
+    cost = 3,
     config = {
         extra = {
-            overall_odds = 500,
+            overall_odds = 777,
             odds_2 = 10,
             odds_3 = 100,
             odds_4 = 250,
@@ -478,15 +674,13 @@ createMultiSlotsCard('Any Multi Plz', {
             payout_4 = 1,
         }
     },
-    pos = {x = 1, y = 3},
 })
-createMultiSlotsCard('Multi Maxer', {
-    key = 'multi-slots-multi-maxer',
+createMultiSlotsCard('Multi Maxer', 0, 3, {
     cost = 5,
-    rarity = 2,
+    rarity = Rarity.Uncommon,
     config = {
         extra = {
-            overall_odds = 500,
+            overall_odds = 777,
             odds_2 = 10,
             odds_3 = 100,
             odds_4 = 250,
@@ -496,7 +690,23 @@ createMultiSlotsCard('Multi Maxer', {
             payout_4 = 10,
         }
     },
-    pos = {x = 0, y = 3},
+})
+
+createMultiTimesSlotsCard('Multiplier', 4, 2, {
+    cost = 7,
+    rarity = Rarity.Uncommon,
+    config = {
+        extra = {
+            overall_odds = 777,
+            odds_2 = 10,
+            odds_3 = 100,
+            odds_4 = 250,
+            payout_1 = 50,
+            payout_2 = 10,
+            payout_3 = 3,
+            payout_4 = 1.5,
+        }
+    },
 })
 ----------------------------------------------
 ------------MOD CODE END----------------------
